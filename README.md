@@ -1,4 +1,4 @@
-#   Cryptocurrency Withdrawal Management Bot
+#   Cryptocurrency Refer&Earn Bot
 
 This bot provides a comprehensive system for managing cryptocurrency withdrawal requests within Telegram. It offers a user-friendly interface for submitting requests and an efficient system for administrators to process them.
 
@@ -8,6 +8,123 @@ This bot provides a comprehensive system for managing cryptocurrency withdrawal 
 2.  [   Admin Commands](#admin-commands)
 
 ##   User Commands
+
+###   🔗 My Link
+
+* **Purpose:** Displays the user's referral statistics, including total referrals and total earnings.
+* **Description:** This command provides users with an overview of their referral activity within the bot. It shows the number of users they have referred and the total amount they have earned through referrals. The command also includes a check for maintenance mode, preventing non-admins from using it during maintenance periods.
+* **Example:** (This command doesn't take parameters, so it's simply) `/my_link`
+* **Code Snippet:**
+
+    ```javascript
+    const ADMIN_ID = 7316439041; //  Replace with your real Telegram ID
+
+    const isAdmin = user.telegramid === ADMIN_ID;
+    const isMaintenance = Bot.getProp("maintenance_mode") === true;
+
+    if (isMaintenance && !isAdmin) {
+      Api.sendMessage({
+        chat_id: chat.chatid,
+        text:
+          "🚧 <b>Maintenance Mode</b>\n\n" +
+          "⛔ <i>The bot is currently under maintenance.</i>\n" +
+          "🕒 <b>Please try again later...</b>",
+        parse_mode: "HTML"
+      });
+      return; //  Stop this command
+    }
+
+    const refList = Libs.ReferralLib.currentUser.refList.get();
+    const referralCount = refList.length;
+    const btc = Libs.ResourcesLib.userRes("BTC");
+
+    Api.sendMessage({
+      chat_id: chat.chatid,
+      text:
+        "<b>📈  <i>Your Referral Stats</i>  📈</b>\n\n" +
+        "🌟 Here's an overview of your referral activity:\n\n" +
+        "<b>👥  <u>Total Referrals:</u></b>  <i>" + parseInt(referralCount) + "</i>\n" +
+        "💰  <b><u>Total Earned:</u></b>  <i>" + btc.value().toFixed(7) + " ₿</i>\n\n" +
+        "📢  <i>Keep sharing your referral link to maximize your earnings!</i>\n",
+      parse_mode: "HTML"
+    });
+    ```
+
+**Key Points in the Markdown:**
+
+* I've used clear headings and formatting.
+* I've explained the purpose, usage, and provided a simplified example.
+* I've included the code snippet for reference.
+* I've highlighted the maintenance mode check.
+
+This should give you a good, concise description for your command!
+
+###   🎁 My Rewards
+
+* **Purpose:** Displays the user's reward history.
+* **Description:** This command shows a list of the user's earned rewards. It checks for maintenance mode, and if active, informs non-admins that the bot is unavailable. The command retrieves and formats the user's reward history, specifically filtering daily rewards to only show those claimed outside the last 24 hours. If there are no rewards, or no valid rewards, it informs the user accordingly.
+* **Example:** (This command doesn't take parameters, so it's simply) `/my_rewards`
+* **Code Snippet:**
+
+    ```javascript
+    const ADMIN_ID = 7316439041; //  🔁 Replace with your real Telegram ID
+
+    const isAdmin = user.telegramid === ADMIN_ID;
+    const isMaintenance = Bot.getProp("maintenance_mode") === true;
+
+    if (isMaintenance && !isAdmin) {
+      Bot.sendMessage(
+        "🚧  <b>Maintenance Mode</b>\n\n" +
+        "⛔  <i>The bot is currently under maintenance.</i>\n" +
+        "🕒  <b>Please try again later...</b>",
+        { parse_mode: "HTML" }
+      );
+      return; //  Stop this command
+    }
+
+    let rewards = User.getProp("reward_history") || [];
+    const lastClaim = User.getProp("last_bonus_time");
+    const now = Date.now();
+    const SECONDS_24H = 24 \* 60 \* 60 \* 1000;
+
+    if (rewards.length === 0) {
+      Bot.sendMessage("<b>🎁  You don’t have any rewards yet.</b>\n\n<i>Start claiming bonuses to fill this list!</i>", {
+        parse_mode: "HTML"
+      });
+      return;
+    }
+
+    let msg = "<b>🎁  My Rewards</b>\n\n";
+    let validRewards = []; //  Array to hold valid rewards
+
+    for (let i = 0; i < rewards.length; i++) {
+      let reward = rewards[i];
+      if (reward.type === "Daily Bonus") {
+        //  Check if the bonus was claimed within the last 24 hours
+        if (lastClaim && (now - lastClaim < SECONDS_24H)) {
+          validRewards.push(reward);
+        }
+      } else {
+        validRewards.push(reward); //  Include other reward types
+      }
+    }
+
+    if (validRewards.length === 0) {
+      Bot.sendMessage("<b>🎁  You don’t have any rewards yet.</b>\n\n<i>Start claiming bonuses to fill this list!</i>", {
+        parse_mode: "HTML"
+      });
+      return;
+    }
+
+    for (let i = 0; i < validRewards.length; i++) {
+      let reward = validRewards[i];
+      msg += "<b>" + (i + 1) + ".</b>  <i>" + reward.type + "</i>\n" +
+             "    💸  <b>Amount:</b>  <i>" + reward.amount + " ₿</i>\n" +
+             "    🕐  <b>Date:</b>  <i>" + reward.time + "</i>\n\n";
+    }
+
+    Bot.sendMessage(msg, { parse_mode: "HTML" });
+    ```
 
 These commands are used by regular users to interact with the withdrawal system.
 
